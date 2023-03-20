@@ -1,6 +1,7 @@
 name: make llama
 on:
   workflow_dispatch:
+  push:
 
 jobs:
   make_llama:
@@ -14,9 +15,6 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: 3.8
-      - name: Install libs
-        run: |
-          sudo apt-get install ffmpeg
       - name: Make
         run: |
           bash auto_build/scripts/llamacpp.sh
@@ -24,5 +22,5 @@ jobs:
         uses: EndBug/add-and-commit@v9
         with:
           message: add llama
-          add: 'llamacpp --force'
+          add: './main --force'
           cwd: 'auto_build'
