@@ -21,36 +21,34 @@ jobs:
           ref: dev
           path: auto_build
       - uses: uraimo/run-on-arch-action@v2
-          name: Build artifact
-          id: build
-          with:
-            arch: ${{ matrix.arch }}
-            distro: ${{ matrix.distro }}
+        name: Build artifact
+        id: build
+        with:
+          arch: ${{ matrix.arch }}
+          distro: ${{ matrix.distro }}
 
-            # Create an artifacts directory
-            setup: |
-              mkdir -p "${PWD}/artifacts"
+          # Create an artifacts directory
+          setup: |
+            mkdir -p "${PWD}/artifacts"
 
-            # Mount the artifacts directory as /artifacts in the container
-            dockerRunArgs: |
-              --volume "${PWD}/artifacts:/artifacts"
+          # Mount the artifacts directory as /artifacts in the container
+          dockerRunArgs: |
+            --volume "${PWD}/artifacts:/artifacts"
 
-            # Pass some environment variables to the container
-            env: | # YAML, but pipe character is necessary
-              artifact_name: llamacpp-${{ matrix.distro }}_${{ matrix.arch }}
+          # Pass some environment variables to the container
+          env: | # YAML, but pipe character is necessary
+            artifact_name: llamacpp-${{ matrix.distro }}_${{ matrix.arch }}
 
-            # The shell to run commands with in the container
-            shell: /bin/sh
+          # The shell to run commands with in the container
+          shell: /bin/sh
 
-            # Produce a binary artifact and place it in the mounted volume
-            run: |
-              git clone https://github.com/ggerganov/llama.cpp /tmp/llama
-              cd /tmp/llama
-              make
-              cp /tmp/llama/man "/artifacts/${artifact_name}"
-              echo "Produced artifact at /artifacts/${artifact_name}"
-
-
+          # Produce a binary artifact and place it in the mounted volume
+          run: |
+            git clone https://github.com/ggerganov/llama.cpp /tmp/llama
+            cd /tmp/llama
+            make
+            cp /tmp/llama/main "/artifacts/${artifact_name}"
+            echo "Produced artifact at /artifacts/${artifact_name}"
       - name: Commit artifacts
         uses: EndBug/add-and-commit@v9
         with:
