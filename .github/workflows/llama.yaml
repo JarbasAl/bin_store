@@ -6,21 +6,54 @@ on:
 jobs:
   make_llama:
     runs-on: ubuntu-latest
+    name: Build on ${{ matrix.distro }} ${{ matrix.arch }}
+
+    # Run steps on a matrix of 4 arch/distro combinations
+    strategy:
+      matrix:
+        include:
+          - arch: aarch64
+            distro: ubuntu18.04
+
     steps:
       - uses: actions/checkout@v3
         with:
           ref: dev
           path: auto_build
-      - name: Setup Python
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.8
-      - name: Make
-        run: |
-          bash auto_build/scripts/llamacpp.sh
+      - uses: uraimo/run-on-arch-action@v2
+          name: Build artifact
+          id: build
+          with:
+            arch: ${{ matrix.arch }}
+            distro: ${{ matrix.distro }}
+
+            # Create an artifacts directory
+            setup: |
+              mkdir -p "${PWD}/artifacts"
+
+            # Mount the artifacts directory as /artifacts in the container
+            dockerRunArgs: |
+              --volume "${PWD}/artifacts:/artifacts"
+
+            # Pass some environment variables to the container
+            env: | # YAML, but pipe character is necessary
+              artifact_name: llamacpp-${{ matrix.distro }}_${{ matrix.arch }}
+
+            # The shell to run commands with in the container
+            shell: /bin/sh
+
+            # Produce a binary artifact and place it in the mounted volume
+            run: |
+              git clone https://github.com/ggerganov/llama.cpp /tmp/llama
+              cd /tmp/llama
+              make
+              cp /tmp/llama/man "/artifacts/${artifact_name}"
+              echo "Produced artifact at /artifacts/${artifact_name}"
+
+
       - name: Commit artifacts
         uses: EndBug/add-and-commit@v9
         with:
           message: add llama
-          add: './main --force'
+          add: './artifacts/* --force'
           cwd: 'auto_build'
